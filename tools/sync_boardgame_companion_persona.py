@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import urllib.request
 from pathlib import Path
@@ -8,9 +9,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DOC = ROOT / "docs" / "boardgame_companion_persona.md"
 OUTPUT = ROOT / "reports" / "boardgame_companion_persona_sync_result.json"
-BASE_URL = "http://127.0.0.1:6185"
-LOGIN_PAYLOAD = {"username": "astrbot", "password": "8b81404f551dd67b3053e92d0d93c765"}
-PERSONA_ID = "boardgame_companion"
+BASE_URL = os.environ.get("ASTRBOT_BASE_URL", "http://127.0.0.1:6185")
+PERSONA_ID = os.environ.get("ASTRBOT_PERSONA_ID", "boardgame_companion")
+ASTRBOT_USERNAME = os.environ.get("ASTRBOT_USERNAME")
+ASTRBOT_PASSWORD = os.environ.get("ASTRBOT_PASSWORD")
 
 
 def section(text: str, heading: str) -> str:
@@ -28,7 +30,7 @@ def section(text: str, heading: str) -> str:
     start = min(starts)
     rest = text[start:]
     next_heading = re.search(r"^##\s+.+$", rest, re.M)
-    return rest[: next_heading.start()] .strip() if next_heading else rest.strip()
+    return rest[:next_heading.start()].strip() if next_heading else rest.strip()
 
 
 def parse_begin_dialogs(block: str) -> list[str]:
@@ -42,17 +44,28 @@ def parse_begin_dialogs(block: str) -> list[str]:
     return items
 
 
-def api(path: str, payload: dict, token: str | None = None) -> dict:
+def api(path: str, payload: dict | None = None, token: str | None = None) -> dict:
     headers = {"Content-Type": "application/json"}
+    data = None
+    if payload is not None:
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    req = urllib.request.Request(
-        f"{BASE_URL}{path}",
-        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-        headers=headers,
-    )
+    req = urllib.request.Request(f"{BASE_URL}{path}", data=data, headers=headers)
     with urllib.request.urlopen(req) as resp:
         return json.loads(resp.read().decode("utf-8"))
+
+
+def login_token() -> str:
+    if not ASTRBOT_USERNAME or not ASTRBOT_PASSWORD:
+        raise RuntimeError(
+            "Missing ASTRBOT_USERNAME / ASTRBOT_PASSWORD environment variables."
+        )
+    login = api(
+        "/api/auth/login",
+        {"username": ASTRBOT_USERNAME, "password": ASTRBOT_PASSWORD},
+    )
+    return login["data"]["token"]
 
 
 def main() -> None:
@@ -60,9 +73,7 @@ def main() -> None:
     system_prompt = section(text, "system_prompt_suggestion")
     begin_dialogs = parse_begin_dialogs(section(text, "begin_dialogs_suggestion"))
     custom_error_message = section(text, "custom_error_message_suggestion")
-
-    login = api("/api/auth/login", LOGIN_PAYLOAD)
-    token = login["data"]["token"]
+    token = login_token()
 
     update_payload = {
         "persona_id": PERSONA_ID,
@@ -78,6 +89,8 @@ def main() -> None:
         json.dumps(
             {
                 "source_doc": str(DOC.relative_to(ROOT)),
+                "base_url": BASE_URL,
+                "persona_id": PERSONA_ID,
                 "update": {k: update_res.get(k) for k in ["status", "message"]},
                 "verify": {
                     "persona_id": detail_res["data"]["persona_id"],
