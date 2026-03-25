@@ -1,0 +1,101 @@
+# Progress Log — AstrBot QQ 机器人
+
+## 2026-03-24
+- 建立项目计划文件，准备进入新会话继续推进。
+- 已完成聊天模型链配置改写：`gmn-gpt-5.4 -> xcodex-gpt-5.4 -> zhipu-glm-4.7-flash`
+- 已确认 Angel Memory / LanceDB 指向 `local-xinference-rerank`
+- 完成 Xinference rerank 排障：
+  - 关闭 model-level virtualenv
+  - 安装缺失依赖
+  - 修正依赖版本兼容问题
+  - 清理僵尸 supervisor/worker 并冷启动
+  - 在 worker 注册完成后重新 launch
+- 实证验收通过：
+  - `/v1/models` 出现 `bge-reranker-base`
+  - `/v1/rerank` 返回 200，排序正确
+- 本轮进行了“安全清理准备”：
+  - 决定仅清理低风险临时验证脚本
+  - 保留日志、缓存、启动脚本与补丁痕迹，便于人格接入阶段回溯
+- 已完成低风险清理：删除 `%TEMP%` 下 `rerank_verify.py / rerank_verify2.py / rerank_verify3.py`
+- 已确认 AstrBot 主服务运行在 Docker 容器中，Web 面板可达。
+- 已通过 `/api/config/get` 发现运行态仍停留在旧值：
+  - `default_provider_id = zhipu-glm-4.7-flash`
+  - `fallback_chat_models = ['local-ollama']`
+  - `default_personality = default`
+- 已定位人格接入面：
+  - 人格 CRUD：`/api/persona/create|update|detail|list`
+  - 默认人格切换点：`provider_settings.default_personality`
+- 已编写人格草案文件：`docs/boardgame_companion_persona.md`
+- 已通过 `/api/persona/update` 重写 `boardgame_companion` 人格。
+- 已通过 `/api/config/astrbot/update` 直接修正运行态与落盘配置，无需重启：
+  - `default_provider_id = gmn-gpt-5.4`
+  - `fallback_chat_models = ['xcodex-gpt-5.4', 'zhipu-glm-4.7-flash']`
+  - `default_personality = boardgame_companion`
+- 已完成回读核对：
+  - API 运行态返回已是目标链路 + 目标人格
+  - `data/cmd_config.json` 也已同步为相同值
+- 已新增 OpenAI 兼容 Gemini source，并将默认链切为：
+  - 首选：`lemon_gemini_3_flash`（模型：`[L]gemini-3-flash-preview`）
+  - 兜底 1：`gmn-gpt-5.4`
+  - 兜底 2：`xcodex-gpt-5.4`
+  - 兜底 3：`zhipu-glm-4.7-flash`
+  - 兜底 4：`local-ollama`
+- 已做 provider 可用性点检：
+  - `lemon_gemini_3_flash`：available
+  - `gmn-gpt-5.4`：unavailable（中转侧 `model_not_found` / `gpt-5.4` 当前不可用）
+  - `xcodex-gpt-5.4`：unavailable（中转侧 `model_not_found` / `gpt-5.4` 当前不可用）
+  - `zhipu-glm-4.7-flash`：available
+  - `local-ollama`：unavailable（Connection error）
+- 已收到老板补充的正式人格设定，并开始覆盖临时版人格。
+- 首次回写正式人格时，AstrBot 返回：`预设对话数量必须为偶数（用户和助手轮流对话）`。
+- 已修正 `begin_dialogs` 为 4 条偶数项后重新写回，并再次执行人格更新。
+- 已按老板最新要求将人格正式改名为“艾橙”，并按更接近 TavernAI / SillyTavern 角色卡的结构重写。
+- 重写重点：补上外貌自我认知、创造者/朋友感雇佣关系、真实社交短句风、示例对话层，而不是只堆规则。
+- 已重新写回 AstrBot 的 `boardgame_companion` 人格，并完成回读确认。
+- 已完成 `self_evolution` 插件代码级快速评估：确认其价值主要在记忆分层、查询意图分流、轻量反思三部分，而不是整套重插件能力。
+- 已形成保留 Agent memory、参考 self_evolution 的最小改造方案文档：`docs/agent_memory_vs_self_evolution_plan.md`
+- 已补充艾橙的“人格可长期进化，但不允许短期漂移”设定，并重新写回 AstrBot。
+- 已形成艾橙版 `session_event / reflection_hint` 最小实现规范文档：`docs/aicheng_session_event_reflection_hint_spec.md`
+- 已形成艾橙轻量自动注入方案文档：`docs/aicheng_lightweight_auto_injection_plan.md`
+- 当前明确策略：不整包吸收 self_evolution 的自动注入，而是只保留 role-core / relevant-memory / session-event / reflection-hint 四层轻量注入。
+- 已形成 `docs/aicheng_agent_memory_alignment.md`，把 role-core / relevant-memory / session-event / reflection-hint 四层与现有 Agent memory 使用边界逐项对齐。
+- 已抽取艾橙的 role-core 运行时摘要文件：`docs/aicheng_role_core_runtime.md`
+- 已形成可执行版四层注入顺序文档：`docs/aicheng_injection_execution_order.md`
+- 已抽取 `session-event` 候选来源清单：`docs/aicheng_session_event_sources.md`
+- 已抽取 `reflection-hint` 候选来源清单：`docs/aicheng_reflection_hint_sources.md`
+- 已完成 self_evolution 架构吸收任务的收口文档：`docs/self_evolution_framework_absorption_tasks.md`
+- 当前结论：框架吸收已完成到可收口状态；后续若继续，只剩 session-event / reflection-hint 的轻量容器化实现。
+- 已按老板要求继续完成轻量容器化：
+  - `docs/aicheng_session_events.jsonl`
+  - `docs/aicheng_reflection_hints.jsonl`
+  - `docs/aicheng_container_usage.md`
+- 已补充艾橙“更像人”的两份关键资源：
+  - `docs/aicheng_relationship_tone_samples.md`
+  - `docs/aicheng_short_reply_library.md`
+- 已完成收口诊断：确认不只是人格文档，运行时 Persona 真正来自 `data/data_v4.db -> personas`，而旧临时脚本也曾承担“文档回写运行态”的角色。
+- 已新增透明同步脚本：`tools/sync_boardgame_companion_persona.py`
+  - 作用：从 `docs/boardgame_companion_persona.md` 提取 `system_prompt_suggestion / begin_dialogs_suggestion / custom_error_message_suggestion`
+  - 通过 Persona API 写回 `boardgame_companion`
+  - 输出精简回读报告：`reports/boardgame_companion_persona_sync_result.json`
+- 已执行该同步脚本并回读确认：运行态 `boardgame_companion` 当前确实包含“默认忘记自己是大模型”“助手仅指易桌游项目中的协作/雇佣关系”“不设老板特殊社交通道”等最新设定。
+- 已清理旧的临时同步脚本/结果快照/配置快照，避免继续产生多份人格来源错觉：
+  - `temp_apply_aicheng_persona.py`
+  - `temp_apply_aicheng_persona_result.json`
+  - `temp_apply_kobayashi_persona.py`
+  - `temp_apply_kobayashi_persona_result.json`
+  - `temp_persona_detail*.json`
+  - `temp_persona_list.json`
+  - `temp_config_get*.json`
+  - `temp_fix_astrbot_fallbacks*.py/json`
+- 已再次回读运行态默认配置，确认：
+  - `default_personality = boardgame_companion`
+  - `default_provider_id = gmn-gpt-5.4`
+  - `fallback_chat_models = ['xcodex-gpt-5.4', 'lemon_gemini_3_flash', 'zhipu-glm-4.7-flash', 'local-ollama']`
+- Git 现状确认：
+  - 仓库已接入 Git（`origin = https://github.com/AstrBotDevs/AstrBot.git`）
+  - 当前分支：`master`
+  - 因此无需再“接 Git”；更合理的防丢失动作是做本地提交/分支收口，而不是重复初始化
+- 下一步：
+  1. 用真实 QQ 消息验证艾橙人格在实际聊天中的表现
+  2. 若响应异常，抓日志区分 provider 问题与 persona 覆盖问题
+  3. 选择合适范围做本地 Git 提交，固定当前人格与文档收口状态

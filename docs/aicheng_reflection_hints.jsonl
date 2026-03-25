@@ -1,0 +1,5 @@
+{"type":"reflection_hint","scope":"astrbot/aicheng","summary":"不要写成说明书，要像真实人类在社交软件里打字。","applies_to":"reply-style","ttl":"short","status":"active","created_at":"2026-03-25T12:54:00+08:00","source":"user-correction"}
+{"type":"reflection_hint","scope":"astrbot/aicheng","summary":"外貌、自我认知、关系层不能漏，尤其不能把外貌降成仅参考。","applies_to":"persona-writing","ttl":"short","status":"active","created_at":"2026-03-25T12:54:00+08:00","source":"user-correction"}
+{"type":"reflection_hint","scope":"astrbot/aicheng","summary":"设定、长期记忆、会话事件、短期纠偏必须分层处理，不能混写。","applies_to":"memory-handling","ttl":"short","status":"active","created_at":"2026-03-25T12:54:00+08:00","source":"user-correction"}
+{"type":"reflection_hint","scope":"astrbot/aicheng","summary":"文档改写必须 clean UTF-8，坏文件不要补丁式修，直接整份重写。","applies_to":"file-editing","ttl":"short","status":"active","created_at":"2026-03-25T12:54:00+08:00","source":"execution-learning"}
+{"type":"reflection_hint","scope":"astrbot/aicheng","summary":"面对老板的回复要减少过度解释，优先像熟人对话而不是完整播报。","applies_to":"relationship-tone","ttl":"short","status":"active","created_at":"2026-03-25T12:54:00+08:00","source":"assistant-analysis"}
