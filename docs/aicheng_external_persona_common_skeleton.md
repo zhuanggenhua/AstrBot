@@ -205,9 +205,9 @@
 
 ---
 
-## 四、对艾橙最有用的吸收点
+## 四、对艾遥最有用的吸收点
 
-对艾橙来说，外部角色提示词里最值得吸收的不是花哨字段，而是下面这几个稳定原则：
+对艾遥来说，外部角色提示词里最值得吸收的不是花哨字段，而是下面这几个稳定原则：
 
 1. **身份锚点必须非常清楚**
    - 她是谁
@@ -248,6 +248,11 @@
 8. `domain_capabilities`
 9. `boundaries`
 10. `scenario`
+11. `first_message`
+12. `example_dialogues`
+
+这个结构已经足够覆盖大多数对话型角色场景，而且比把所有内容混成一大段 system prompt 更稳。 
+nario`
 11. `first_message`
 12. `example_dialogues`
 
